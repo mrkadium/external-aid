@@ -1,0 +1,89 @@
+#!/bin/bash
+
+echo -e "----Name Resolution Check:\n\n"
+cat /etc/resolv.conf
+echo ""
+echo ""
+echo ""
+
+
+read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+
+
+######## SUBDOMAIN ENUMERATION
+echo -e "\n\n---- SUBDOMAIN ENUMERATION ----"
+
+while read -r DOMAIN; do sublist3r --domain $DOMAIN --no-color 2>/dev/null; done < scope_domains.txt | tee sublist3r_result.txt;
+
+subfinder -update; subfinder -list scope_domains.txt -rl 10 -all -silent | tee subfinder_result.txt;
+
+while read -r DOMAIN; do theHarvester -q -d $DOMAIN -b all; done < scope_domains.txt | tee theHarvester_result.txt
+
+cat sublist3r_result.txt subfinder_result.txt theHarvester_result.txt | grep -ivE "^[[:space:]]*$|^\[|\ |Enumerating|\@|https://|:|\*" | grep -iE ".org|.com|.net" | sort | uniq > subdomains.txt
+
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; dig $DOMAIN +short; done < subdomains.txt | tee resolved_domains_2_ips.txt;
+
+
+
+
+
+######## SUBDOMAIN VALIDATION
+echo -e "\n\n---- SUBDOMAIN VALIDATION ----"
+
+eyewitness -f subdomains.txt --timeout 15 --delay 10 --prepend-http --no-prompt -d eyewitness_result_subdomains;
+
+while read -r DOMAIN; do echo "SUBDOMAIN: $DOMAIN"; curl --silent --head --location --insecure --verbose --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0" "$DOMAIN" 2>&1; done < subdomains.txt | tee curl_result_subdomains.txt;
+
+cat curl_result_subdomains.txt | grep -ivE "office365" | grep -iE "OPENED" | awk -F\  '{print $NF}' | sort | uniq > final_urls.txt;
+
+while read -r DOMAIN; do dnsrecon -d $DOMAIN; echo ""; done < scope_domains.txt | tee dnsrecon_result.txt;
+
+
+
+
+
+######## PORT SCANNING
+echo -e "\n\n---- PORT SCANNING ----"
+
+nmap -iL scope_ips.txt -Pn --top-ports 1000 -n -sS -T4 --min-rate 1000 --scan-delay 100ms --max-retries 1 --max-rtt-timeout 1000ms --source-port 53 -oN nmap_result.nmap -v;
+
+nmap -iL scope_ips.txt -Pn --top-ports 1000 -n -sU -T4 --min-rate 1000 --scan-delay 100ms --max-retries 1 --max-rtt-timeout 1000ms --source-port 53 -oN nmap_result_udp.nmap -v;
+
+cat *.nmap | grep -iE "open|Nmap scan report" | grep -ivE "Warning|OpenBSD|OpenSSL|no-response|fingerprint|filtered" | awk '{ prevLine; { if(prevLine ~ /Nmap/ && $0 ~ /^[0-9]/) print prevLine } prevLine = $0 }' | awk -F\  '{print $NF}' | sed 's/[()]//g' | sort | uniq > active_hosts.txt;
+
+PORTS=$(cat *.nmap | grep -iE "open|Nmap scan report" | grep -ivE "Warning|OpenBSD|OpenSSL|no-response|fingerprint|filtered|syn-ack ttl 51|syn-ack ttl 49" | awk -F\  '{print $1}' | sed -E 's/\b(\/tcp|\/udp|Nmap)\b//g' | sort | uniq | awk '{ printf sep $0; sep="," } END { print "" }' | awk '{print substr($0, 2, length($0))}');
+
+nmap -iL active_hosts.txt -p$PORTS -n -Pn -sS -sU -sV -sC --max-retries 2 --source-port 53 -oN nmap_result_ports.nmap -v
+
+cat *.nmap | grep -ivE "no-response" | grep -iE "open" | awk -F\  '{print $3}' | sed 's/\?//g' | sed 's/ssl\/http/https/g' | sort | uniq > unique_services.txt
+
+while read -r SERVICE; do cat *.nmap | grep -ivE "closed|no-response|Warning|syn-ack ttl 51|syn-ack ttl 49" | grep -E "Nmap scan report|open" | grep -iE "Nmap scan report|$SERVICE " | awk '{ prevLine; { if(prevLine ~ /Nmap/ && $0 ~ /^[0-9]/) print prevLine, $1 } if($0 ~ /^[0-9]/){  } else {prevLine = $0} }' | awk -F\  '{print $(NF-1), $NF}' | sed 's/[()]//g' | sed 's/\ /:/g' | sed -E 's/(\/tcp|\/udp)//g' >> have_active_$SERVICE.txt; done < unique_services.txt
+
+
+
+
+
+######## WEB CHECKS
+echo -e "\n\n---- WEB CHECKS ----"
+
+cat have_active_http* > have_web_ports_open.txt
+
+eyewitness -f have_web_ports_open.txt --timeout 15 --delay 10 --prepend-http --no-prompt -d eyewitness_result_hosts
+
+while read -r HOST; do echo "HOST: $HOST"; curl --silent --head --location --insecure --verbose --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0" "$HOST" 2>&1; done < have_web_ports_open.txt | tee curl_result_hosts.txt
+
+
+
+
+
+
+
+
+######## HEADERS AND SSL CHECKS
+echo -e "\n\n---- HEADERS AND SSL CHECKS ----"
+
+cat have_web_ports_open.txt final_urls.txt > have_web.txt
+
+while read -r HOST; do sslscan --disable-ssl-check $HOST; done < have_web.txt | tee sslscan_result.txt
+
+FILE="shcheck_result.txt"; while read -r URL; do echo "URL: $URL"; shcheck "$URL"; done < have_web.txt | tee shcheck_result.txt;
