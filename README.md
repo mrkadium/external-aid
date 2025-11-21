@@ -1,10 +1,20 @@
-# MDATA-GETTER
-A tool for getting files from search engines like Google and Bing, and check the metadata contained in them
+# EXTERNAL-AID
+A tool to perform subdomain enumeration, port scanning, dns configuration checks, SSL/TLS checks, screeshot of websites, and more.
 
 ## Usage
 ```bash
-./mdata-getter TARGET_DOMAIN FILE_TYPES BROWSER_ID
+# It needs at least two files: 
+#   scope_ips.txt: contains every IP, range, subnet ID to scan in a single line each
+#   scope_domains.txt: contains every domain to target in a single line each
+nano scope_ips.txt
+nano scope_domains.txt
+
+# To run it
+./external-aid.sh
 ```
-- **TARGET_DOMAIN**: you can set whatever domain you'd like to search files for
-- **FILE_TYPES**: any number of file types, separated by a comma (pdf,docx,xlsx,txt...)
-- **BROWSER_ID**: this one is tricky
+
+If you need to change your DNS resolution configuration:
+```bash
+sudo nano /etc/resolv.conf
+```
+Add or remove any DNS server you'd like
