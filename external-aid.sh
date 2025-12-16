@@ -125,5 +125,39 @@ echo -n "* Instances of DES/3DES: "; cat sslscan_result* | grep -ivE "SHA256|SHA
 
 
 
+######## WORDPRESS CHECKS
+# /wp-json/
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/"; done < scope_domains.txt | tee curl_result_wp-json.txt
+
+# /wp-cron.php
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-cron.php"; done < scope_domains.txt | tee curl_result_wp-cron.txt
+
+# /xmlrpc.php
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/xmlrpc.php"; done < scope_domains.txt | tee curl_result_xmlrpc.txt
+
+# /wp-admin/install.php?step=1
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-admin/install.php?step=1"; done < scope_domains.txt | tee curl_result_install.txt
+
+# /user
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp/api/v2/users/"; done < scope_domains.txt | tee curl_result_users1.txt
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/wp/v2/users/"; done < scope_domains.txt | tee curl_result_users2.txt
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/author-sitemap.xml"; done < scope_domains.txt | tee curl_result_users3.txt
+
+## SUMMARY
+echo -e "\nWordPress checks" >> $SUMMARY
+echo -n "* Instances with /wp-json (WordPress): " >> $SUMMARY; grep "200" curl_result_wp-json.txt -c >> $SUMMARY
+echo -n "* Instances with wp-cron.php: " >> $SUMMARY; grep "200" curl_result_wp-cron.txt -c >> $SUMMARY
+echo -n "* Instances with xmlrpc.php: " >> $SUMMARY; grep "405" curl_result_xmlrpc.txt -c >> $SUMMARY
+echo -n "* Instances with install.php: " >> $SUMMARY; grep "200" curl_result_install.txt -c >> $SUMMARY
+echo -n "* Instances with /wp/api/v2/users/: " >> $SUMMARY; grep "200" curl_result_users1.txt -c >> $SUMMARY
+echo -n "* Instances with /wp-json/wp/v2/users/: " >> $SUMMARY; grep "200" curl_result_users2.txt -c >> $SUMMARY
+echo -n "* Instances with /author-sitemap.xml: " >> $SUMMARY; grep "200" curl_result_users3.txt -c >> $SUMMARY
+
+
+
+
+
+
+
 ######## SUMMARY
 cat $SUMMARY
