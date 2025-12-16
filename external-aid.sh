@@ -51,6 +51,7 @@ while read -r DOMAIN; do dnsrecon -d $DOMAIN; echo ""; done < scope_domains.txt 
 ## SUMMARY
 echo -e "\nSubdomain validation" >> $SUMMARY
 echo -n "* Subdomains with 'OPENED' state (active): " >> $SUMMARY; grep "" final_urls.txt -c >> $SUMMARY;
+echo -n "* Subdomains with 404 page: " >> $SUMMARY; grep "404" curl_result_subdomains.txt -c >> $SUMMARY;
 
 
 
