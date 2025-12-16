@@ -30,7 +30,7 @@ while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; dig $DOMAIN +short; done < subd
 
 ## SUMMARY
 echo "SUMMARY of external_aid.sh results" >> $SUMMARY
-echo -e "Subdomain enumeration" >> $SUMMARY
+echo -e "\nSubdomain enumeration" >> $SUMMARY
 echo -n "* Subdomains enumerated: " >> $SUMMARY; grep "" subdomains.txt -c >> $SUMMARY;
 
 
@@ -49,7 +49,7 @@ cat curl_result_subdomains.txt | grep -ivE "office365" | grep -iE "OPENED" | awk
 while read -r DOMAIN; do dnsrecon -d $DOMAIN; echo ""; done < scope_domains.txt | tee dnsrecon_result.txt;
 
 ## SUMMARY
-echo -e "\nSubdomain validation" >> $SUMMARY
+echo -e "\n\nSubdomain validation" >> $SUMMARY
 echo -n "* Subdomains with 'OPENED' state (active): " >> $SUMMARY; grep "" final_urls.txt -c >> $SUMMARY;
 echo -n "* Subdomains with 404 page: " >> $SUMMARY; grep "404" curl_result_subdomains.txt -c >> $SUMMARY;
 
@@ -76,10 +76,10 @@ cat *.nmap | grep -ivE "no-response" | grep -iE "open" | awk -F\  '{print $3}' |
 while read -r SERVICE; do cat *.nmap | grep -ivE "closed|no-response|Warning|syn-ack ttl 51|syn-ack ttl 49" | grep -E "Nmap scan report|open" | grep -iE "Nmap scan report|$SERVICE " | awk '{ prevLine; { if(prevLine ~ /Nmap/ && $0 ~ /^[0-9]/) print prevLine, $1 } if($0 ~ /^[0-9]/){  } else {prevLine = $0} }' | awk -F\  '{print $(NF-1), $NF}' | sed 's/[()]//g' | sed 's/\ /:/g' | sed -E 's/(\/tcp|\/udp)//g' >> have_active_$SERVICE.txt; done < unique_services.txt
 
 ## SUMMARY
-echo -e "\nPort scanning" >> $SUMMARY
+echo -e "\n\nPort scanning" >> $SUMMARY
 echo -n "* Active hosts: " >> $SUMMARY; grep "" active_hosts.txt -c >> $SUMMARY;
 echo -n "* Unique services: " >> $SUMMARY; grep "" unique_services.txt -c >> $SUMMARY;
-echo -n "* * " >> $SUMMARY; while read -r SERVICE; do echo -n "$SERVICE, " >> $SUMMARY; done << unique_services.txt
+echo -n "* * " >> $SUMMARY; while read -r SERVICE; do echo -n "$SERVICE, " >> $SUMMARY; done << unique_services.txt;
 
 
 
@@ -88,13 +88,13 @@ echo -n "* * " >> $SUMMARY; while read -r SERVICE; do echo -n "$SERVICE, " >> $S
 
 
 ######## WEB CHECKS
-echo -e "\n\n---- WEB CHECKS ----"
+echo -e "\n\n---- WEB CHECKS ----";
 
-cat have_active_http* > have_web_ports_open.txt
+cat have_active_http* > have_web_ports_open.txt;
 
-eyewitness -f have_web_ports_open.txt --timeout 15 --delay 10 --prepend-http --no-prompt -d eyewitness_result_hosts
+eyewitness -f have_web_ports_open.txt --timeout 15 --delay 10 --prepend-http --no-prompt -d eyewitness_result_hosts;
 
-while read -r HOST; do echo "HOST: $HOST"; curl --silent --head --location --insecure --verbose --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0" "$HOST" 2>&1; done < have_web_ports_open.txt | tee curl_result_hosts.txt
+while read -r HOST; do echo "HOST: $HOST"; curl --silent --head --location --insecure --verbose --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0" "$HOST" 2>&1; done < have_web_ports_open.txt | tee curl_result_hosts.txt;
 
 ## SUMMARY
 
@@ -107,18 +107,18 @@ while read -r HOST; do echo "HOST: $HOST"; curl --silent --head --location --ins
 
 
 ######## HEADERS AND SSL CHECKS
-echo -e "\n\n---- HEADERS AND SSL CHECKS ----"
+echo -e "\n\n---- HEADERS AND SSL CHECKS ----";
 
-cat have_web_ports_open.txt final_urls.txt > have_web.txt
+cat have_web_ports_open.txt final_urls.txt > have_web.txt;
 
-while read -r HOST; do sslscan --disable-ssl-check $HOST; done < have_web.txt | tee sslscan_result.txt
+while read -r HOST; do sslscan --disable-ssl-check $HOST; done < have_web.txt | tee sslscan_result.txt;
 
 FILE="shcheck_result.txt"; while read -r URL; do echo "URL: $URL"; shcheck "$URL"; done < have_web.txt | tee shcheck_result.txt;
 
 ## SUMMARY
-echo -e "\nSSL/TLS checks" >> $SUMMARY
-echo -n "* Instances of outdated SSL/TLS versions: "; cat sslscan_result* | grep -ivE "Accepted|Preferred|heartbleed|bits" | grep -iE "Testing|TLSv1.0|TLSv1.1|SSLv2|SSLv3|Subject" | grep -iE "enabled" -c >> $SUMMARY
-echo -n "* Instances of DES/3DES: "; cat sslscan_result* | grep -ivE "SHA256|SHA384" | grep -iE "DES|3DES" -c >> $SUMMARY
+echo -e "\n\nSSL/TLS checks" >> $SUMMARY;
+echo -n "* Instances of outdated SSL/TLS versions: "; cat sslscan_result* | grep -ivE "Accepted|Preferred|heartbleed|bits" | grep -iE "Testing|TLSv1.0|TLSv1.1|SSLv2|SSLv3|Subject" | grep -iE "enabled" -c >> $SUMMARY;
+echo -n "* Instances of DES/3DES: "; cat sslscan_result* | grep -ivE "SHA256|SHA384" | grep -iE "DES|3DES" -c >> $SUMMARY;
 
 
 
@@ -127,32 +127,33 @@ echo -n "* Instances of DES/3DES: "; cat sslscan_result* | grep -ivE "SHA256|SHA
 
 
 ######## WORDPRESS CHECKS
+echo -e "\n\n---- WORDPRESS CHECKS";
 # /wp-json/
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/"; done < scope_domains.txt | tee curl_result_wp-json.txt
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/"; done < scope_domains.txt | tee curl_result_wp-json.txt;
 
 # /wp-cron.php
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-cron.php"; done < scope_domains.txt | tee curl_result_wp-cron.txt
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-cron.php"; done < scope_domains.txt | tee curl_result_wp-cron.txt;
 
 # /xmlrpc.php
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/xmlrpc.php"; done < scope_domains.txt | tee curl_result_xmlrpc.txt
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/xmlrpc.php"; done < scope_domains.txt | tee curl_result_xmlrpc.txt;
 
 # /wp-admin/install.php?step=1
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-admin/install.php?step=1"; done < scope_domains.txt | tee curl_result_install.txt
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-admin/install.php?step=1"; done < scope_domains.txt | tee curl_result_install.txt;
 
 # /user
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp/api/v2/users/"; done < scope_domains.txt | tee curl_result_users1.txt
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/wp/v2/users/"; done < scope_domains.txt | tee curl_result_users2.txt
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/author-sitemap.xml"; done < scope_domains.txt | tee curl_result_users3.txt
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp/api/v2/users/"; done < scope_domains.txt | tee curl_result_users1.txt;
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/wp/v2/users/"; done < scope_domains.txt | tee curl_result_users2.txt;
+while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/author-sitemap.xml"; done < scope_domains.txt | tee curl_result_users3.txt;
 
 ## SUMMARY
-echo -e "\nWordPress checks" >> $SUMMARY
-echo -n "* Instances with /wp-json (WordPress): " >> $SUMMARY; grep "200" curl_result_wp-json.txt -c >> $SUMMARY
-echo -n "* Instances with wp-cron.php: " >> $SUMMARY; grep "200" curl_result_wp-cron.txt -c >> $SUMMARY
-echo -n "* Instances with xmlrpc.php: " >> $SUMMARY; grep "405" curl_result_xmlrpc.txt -c >> $SUMMARY
-echo -n "* Instances with install.php: " >> $SUMMARY; grep "200" curl_result_install.txt -c >> $SUMMARY
-echo -n "* Instances with /wp/api/v2/users/: " >> $SUMMARY; grep "200" curl_result_users1.txt -c >> $SUMMARY
-echo -n "* Instances with /wp-json/wp/v2/users/: " >> $SUMMARY; grep "200" curl_result_users2.txt -c >> $SUMMARY
-echo -n "* Instances with /author-sitemap.xml: " >> $SUMMARY; grep "200" curl_result_users3.txt -c >> $SUMMARY
+echo -e "\nWordPress checks" >> $SUMMARY;
+echo -e -n "* Instances with /wp-json (WordPress): " >> $SUMMARY; grep "200" curl_result_wp-json.txt -c >> $SUMMARY;
+echo -e -n "\n* Instances with wp-cron.php: " >> $SUMMARY; grep "200" curl_result_wp-cron.txt -c >> $SUMMARY;
+echo -e -n "\n* Instances with xmlrpc.php: " >> $SUMMARY; grep "405" curl_result_xmlrpc.txt -c >> $SUMMARY;
+echo -e -n "\n* Instances with install.php: " >> $SUMMARY; grep "200" curl_result_install.txt -c >> $SUMMARY;
+echo -e -n "\n* Instances with /wp/api/v2/users/: " >> $SUMMARY; grep "200" curl_result_users1.txt -c >> $SUMMARY;
+echo -e -n "\n* Instances with /wp-json/wp/v2/users/: " >> $SUMMARY; grep "200" curl_result_users2.txt -c >> $SUMMARY;
+echo -e -n "\n* Instances with /author-sitemap.xml: " >> $SUMMARY; grep "200" curl_result_users3.txt -c >> $SUMMARY;
 
 
 
@@ -161,4 +162,4 @@ echo -n "* Instances with /author-sitemap.xml: " >> $SUMMARY; grep "200" curl_re
 
 
 ######## SUMMARY
-cat $SUMMARY
+cat $SUMMARY;
