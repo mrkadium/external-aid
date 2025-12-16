@@ -79,7 +79,9 @@ while read -r SERVICE; do cat *.nmap | grep -ivE "closed|no-response|Warning|syn
 echo -e "\n\nPort scanning" >> $SUMMARY
 echo -n "* Active hosts: " >> $SUMMARY; grep "" active_hosts.txt -c >> $SUMMARY;
 echo -n "* Unique services: " >> $SUMMARY; grep "" unique_services.txt -c >> $SUMMARY;
-echo -n "* * " >> $SUMMARY; while read -r SERVICE; do echo -n "$SERVICE, " >> $SUMMARY; done << unique_services.txt;
+echo -n "* * " >> $SUMMARY;
+cat unique_services.txt;
+echo "" >> $SUMMARY;
 
 
 
