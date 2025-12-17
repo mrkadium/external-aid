@@ -52,6 +52,9 @@ while read -r DOMAIN; do dnsrecon -d $DOMAIN; echo ""; done < scope_domains.txt 
 echo -e "\n\nSubdomain validation" >> $SUMMARY
 echo -n "* Subdomains with 'OPENED' state (active): " >> $SUMMARY; grep "" final_urls.txt -c >> $SUMMARY;
 echo -n "* Subdomains with 404 page: " >> $SUMMARY; grep "404" curl_result_subdomains.txt -c >> $SUMMARY;
+echo -n "* Subdomains without DNSSEC: " >> $SUMMARY; grep -iE "DNSSEC is not configured" dnsrecon_result.txt -c >> $SUMMARY;
+echo -n "* Subdomains with p=none: " >> $SUMMARY; grep -iE "v=DMARC|p=" dnsrecon_result.txt | awk -F\; '{ print $1, $2 }' | grep -iE "v=|p=none" -c >> $SUMMARY;
+echo -n "* Subdomains with ~all: " >> $SUMMARY; grep -iE "~all" dnsrecon_result.txt -c >> $SUMMARY;
 
 
 
