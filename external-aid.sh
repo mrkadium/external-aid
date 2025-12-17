@@ -71,7 +71,7 @@ PORTS=$(cat *.nmap | grep -iE "open|Nmap scan report" | grep -ivE "Warning|OpenB
 
 nmap -iL active_hosts.txt -p$PORTS -n -Pn -sS -sU -sV -sC --max-retries 2 --source-port 53 -oN nmap_result_ports.nmap -v
 
-cat *.nmap | grep -ivE "no-response" | grep -iE "open" | awk -F\  '{print $3}' | sed 's/\?//g' | sed 's/ssl\/http/https/g' | sort | uniq > unique_services.txt
+cat *.nmap | grep -ivE "SF:| fixes|filtered|no-response" | grep -iE "open" | awk -F\  '{print $3}' | sed 's/\?//g' | sed 's/ssl\/http/https/g' | grep -iE "." | grep -ivE "^with$" | sort | uniq > unique_services.txt
 
 while read -r SERVICE; do cat *.nmap | grep -ivE "closed|no-response|Warning|syn-ack ttl 51|syn-ack ttl 49" | grep -E "Nmap scan report|open" | grep -iE "Nmap scan report|$SERVICE " | awk '{ prevLine; { if(prevLine ~ /Nmap/ && $0 ~ /^[0-9]/) print prevLine, $1 } if($0 ~ /^[0-9]/){  } else {prevLine = $0} }' | awk -F\  '{print $(NF-1), $NF}' | sed 's/[()]//g' | sed 's/\ /:/g' | sed -E 's/(\/tcp|\/udp)//g' >> have_active_$SERVICE.txt; done < unique_services.txt
 
@@ -80,7 +80,7 @@ echo -e "\n\nPort scanning" >> $SUMMARY
 echo -n "* Active hosts: " >> $SUMMARY; grep "" active_hosts.txt -c >> $SUMMARY;
 echo -n "* Unique services: " >> $SUMMARY; grep "" unique_services.txt -c >> $SUMMARY;
 echo -n "* * " >> $SUMMARY;
-cat unique_services.txt;
+grep -iE "." unique_services.txt | grep -ivE "^with$";
 echo "" >> $SUMMARY;
 
 
