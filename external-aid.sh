@@ -149,13 +149,13 @@ while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/aut
 
 ## SUMMARY
 echo -e "\nWordPress checks" >> $SUMMARY;
-echo -e -n "* Instances with /wp-json (WordPress): " >> $SUMMARY; grep "200" curl_result_wp-json.txt -c >> $SUMMARY;
-echo -e -n "\n* Instances with wp-cron.php: " >> $SUMMARY; grep "200" curl_result_wp-cron.txt -c >> $SUMMARY;
-echo -e -n "\n* Instances with xmlrpc.php: " >> $SUMMARY; grep "405" curl_result_xmlrpc.txt -c >> $SUMMARY;
-echo -e -n "\n* Instances with install.php: " >> $SUMMARY; grep "200" curl_result_install.txt -c >> $SUMMARY;
-echo -e -n "\n* Instances with /wp/api/v2/users/: " >> $SUMMARY; grep "200" curl_result_users1.txt -c >> $SUMMARY;
-echo -e -n "\n* Instances with /wp-json/wp/v2/users/: " >> $SUMMARY; grep "200" curl_result_users2.txt -c >> $SUMMARY;
-echo -e -n "\n* Instances with /author-sitemap.xml: " >> $SUMMARY; grep "200" curl_result_users3.txt -c >> $SUMMARY;
+echo -e -n "* Instances with /wp-json (WordPress): " >> $SUMMARY; grep -iE "HTTP\/" curl_result_wp-json.txt | grep "200" -c >> $SUMMARY;
+echo -e -n "\n* Instances with wp-cron.php: " >> $SUMMARY; grep "HTTP\/" curl_result_wp-cron.txtgrep -iE | grep "200" -c >> $SUMMARY;
+echo -e -n "\n* Instances with xmlrpc.php: " >> $SUMMARY; grep -iE "HTTP\/" curl_result_xmlrpc.txt | grep "405" -c >> $SUMMARY;
+echo -e -n "\n* Instances with install.php: " >> $SUMMARY; grep -iE "HTTP\/" curl_result_install.txt | grep "200" -c >> $SUMMARY;
+echo -e -n "\n* Instances with /wp/api/v2/users/: " >> $SUMMARY; grep -iE "HTTP\/" curl_result_users1.txt | grep "200" -c >> $SUMMARY;
+echo -e -n "\n* Instances with /wp-json/wp/v2/users/: " >> $SUMMARY; grep -iE "HTTP\/" curl_result_users2.txt | grep "200" -c -c >> $SUMMARY;
+echo -e -n "\n* Instances with /author-sitemap.xml: " >> $SUMMARY; grep -iE "HTTP\/" curl_result_users3.txt | grep "200" -c >> $SUMMARY;
 
 
 
