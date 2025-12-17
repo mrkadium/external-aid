@@ -48,6 +48,12 @@ cat curl_result_subdomains.txt | grep -ivE "office365" | grep -iE "OPENED" | awk
 
 while read -r DOMAIN; do dnsrecon -d $DOMAIN; echo ""; done < scope_domains.txt | tee dnsrecon_result.txt;
 
+while read -r DOMAIN; do echo "\n\n-- Domain:\n$DOMAIN"; NS=$(dig +short ns "$DOMAIN" | head --lines=1); echo "-- Name servers:\n$NS"; echo "-- Zone transfer test result:"; dig axfr "$DOMAIN" @"$NS"; done < scope_domains.txt | tee zone_transfer_result.txt
+
+while read -r DOMAIN; do echo -e "\n\n\nTesting domain $DOMAIN for zone walking"; NS=$(dig +short ns "$DOMAIN" | head --lines=1); echo -e "\n\t* Name servers:\n$NS"; echo -e "\n\t* INVALID subdomain result:"; dig "rsmtest.$DOMAIN" +dnssec @"$NS" | grep -E "NSEC"; echo "\n\t* VALID subdomain result:"; dig "www.$DOMAIN" +dnssec @"$NS" | grep -E "RRSIG"; done < scope_domains.txt | tee zone_walking_result.txt
+
+subjack -w scope_domains.txt -c ~/Tools/subjack/fingerprints.json -v | tee subjack_result.txt
+
 ## SUMMARY
 echo -e "\n\nSubdomain validation" >> $SUMMARY
 echo -n "* Subdomains with 'OPENED' state (active): " >> $SUMMARY; grep "" final_urls.txt -c >> $SUMMARY;
@@ -55,7 +61,9 @@ echo -n "* Subdomains with 404 page: " >> $SUMMARY; grep "404" curl_result_subdo
 echo -n "* Subdomains without DNSSEC: " >> $SUMMARY; grep -iE "DNSSEC is not configured" dnsrecon_result.txt -c >> $SUMMARY;
 echo -n "* Subdomains with p=none: " >> $SUMMARY; grep -iE "v=DMARC|p=" dnsrecon_result.txt | awk -F\; '{ print $1, $2 }' | grep -iE "v=|p=none" -c >> $SUMMARY;
 echo -n "* Subdomains with ~all: " >> $SUMMARY; grep -iE "~all" dnsrecon_result.txt -c >> $SUMMARY;
-
+echo -n "* Subdomains WITHOUT zone transfer problems: " >> $SUMMARY; grep -iE "Transfer failed" dnsrecon_result.txt -c >> $SUMMARY;
+echo -n "* Subdomains with zone walking problems: " >> $SUMMARY; grep -iE "NSEC" zone_walking_result.txt | grep -iE "\!\." -c >> $SUMMARY;
+echo -n "* Subdomains WITHOUT subdomain takeover problems: " >> $SUMMARY; grep -iE "Not vulnerable" subjacking_result.txt | sort | uniq | grep "" -c >> $SUMMARY;
 
 
 
