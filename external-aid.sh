@@ -24,7 +24,7 @@ subfinder -update; subfinder -list scope_domains.txt -rl 10 -all -silent | tee s
 
 while read -r DOMAIN; do theHarvester -q -d $DOMAIN -b all; done < scope_domains.txt | tee theHarvester_result.txt
 
-cat sublist3r_result.txt subfinder_result.txt theHarvester_result.txt | grep -ivE "^[[:space:]]*$|^\[|\ |Enumerating|\@|https://|:|\*" | grep -iE ".org|.com|.net" | sort | uniq > subdomains.txt
+cat sublist3r_result.txt subfinder_result.txt theHarvester_result.txt | grep -ivE "^[[:space:]]*$|^\[|\ |Enumerating|\@|https://|:|\*" | grep -iE ".agency|.ai|.bank|.biz|.ca|.co|.com|.digital|.fortisbankus|.info|.io|.law|.mobi|.net|.online|.org|.re|.realestate|.site|.sullicurt|.us" | sort | uniq > subdomains.txt
 
 while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; dig $DOMAIN +short; done < subdomains.txt | tee resolved_domains_2_ips.txt;
 
