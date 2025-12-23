@@ -109,8 +109,12 @@ echo -n "Start eyewitness for hosts: "; date; eyewitness -f have_web_ports_open.
 
 echo -n "Start curl for hosts: "; date; while read -r HOST; do echo "HOST: $HOST"; curl --silent --head --location --insecure --verbose --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0" "$HOST" 2>&1; done < have_web_ports_open.txt; echo -n "End: "; date; | tee curl_result_hosts.txt;
 
+cat curl_result* | grep -ivE "x-pingback|subdomain:|cn=|set-cookie|s.net|vary:|report-to:|location:|^\*|link:|HOST:|content-security-policy|DOMAIN:|HEAD \/|expires=|<|>" | grep -iE "apache|next|php|node|asp|microsoft|iis|httpapi|nginx|cerberus" | sort | uniq > web_backend_technology.txt
+
 ## SUMMARY
 
+echo -e "\n\nWeb checks" >> $SUMMARY
+echo -n "* Exposed technologies in headers: " >> $SUMMARY; grep "" web_backend_technology -c >> $SUMMARY;
 
 
 
