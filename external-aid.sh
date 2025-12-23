@@ -91,7 +91,7 @@ echo -e "\n\nPort scanning" >> $SUMMARY
 echo -n "* Active hosts: " >> $SUMMARY; grep "" active_hosts.txt -c >> $SUMMARY;
 echo -n "* Unique services: " >> $SUMMARY; grep "" unique_services.txt -c >> $SUMMARY;
 echo -n "* * " >> $SUMMARY;
-grep -iE "." unique_services.txt | grep -ivE "^with$";
+grep -iE "." unique_services.txt | grep -ivE "^with$" >> $SUMMARY;
 echo "" >> $SUMMARY;
 
 
@@ -130,8 +130,8 @@ FILE="shcheck_result.txt"; while read -r URL; do echo "URL: $URL"; shcheck "$URL
 
 ## SUMMARY
 echo -e "\n\nSSL/TLS checks" >> $SUMMARY;
-echo -n "* Instances of outdated SSL/TLS versions: "; cat sslscan_result* | grep -ivE "Accepted|Preferred|heartbleed|bits" | grep -iE "Testing|TLSv1.0|TLSv1.1|SSLv2|SSLv3|Subject" | grep -iE "enabled" -c >> $SUMMARY;
-echo -n "* Instances of DES/3DES: "; cat sslscan_result* | grep -ivE "SHA256|SHA384" | grep -iE "DES|3DES" -c >> $SUMMARY;
+echo -n "* Instances of outdated SSL/TLS versions: " >> $SUMMARY; cat sslscan_result* | grep -ivE "Accepted|Preferred|heartbleed|bits" | grep -iE "Testing|TLSv1.0|TLSv1.1|SSLv2|SSLv3|Subject" | grep -iE "enabled" -c >> $SUMMARY;
+echo -n "* Instances of DES/3DES: " $SUMMARY; cat sslscan_result* | grep -ivE "SHA256|SHA384" | grep -iE "DES|3DES" -c >> $SUMMARY;
 
 
 
