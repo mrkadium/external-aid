@@ -18,15 +18,15 @@ SUMMARY="extaid_summary.txt"
 ######## SUBDOMAIN ENUMERATION
 echo -e "\n\n---- SUBDOMAIN ENUMERATION ----"
 
-while read -r DOMAIN; do sublist3r --domain $DOMAIN --no-color 2>/dev/null; done < scope_domains.txt | tee sublist3r_result.txt;
+echo -n "Start sublist3r: "; date; while read -r DOMAIN; do sublist3r --domain $DOMAIN --no-color 2>/dev/null; done < scope_domains.txt; echo -n "End: "; date; | tee sublist3r_result.txt;
 
-subfinder -update; subfinder -list scope_domains.txt -rl 10 -all -silent | tee subfinder_result.txt;
+echo -n "Start subfinder: "; date; subfinder -update; subfinder -list scope_domains.txt -rl 10 -all -silent; echo -n "End: "; date; | tee subfinder_result.txt;
 
-while read -r DOMAIN; do theHarvester -q -d $DOMAIN -b all; done < scope_domains.txt | tee theHarvester_result.txt
+echo -n "Start theHarvester: "; date; while read -r DOMAIN; do theHarvester -q -d $DOMAIN -b all; done < scope_domains.txt; echo -n "End: "; date; | tee theHarvester_result.txt
 
 cat sublist3r_result.txt subfinder_result.txt theHarvester_result.txt | grep -ivE "^[[:space:]]*$|^\[|\ |Enumerating|\@|https://|:|\*" | grep -iE ".agency|.ai|.bank|.biz|.ca|.co|.com|.digital|.fortisbankus|.info|.io|.law|.mobi|.net|.online|.org|.re|.realestate|.site|.sullicurt|.us" | sort | uniq > subdomains.txt
 
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; dig $DOMAIN +short; done < subdomains.txt | tee resolved_domains_2_ips.txt;
+echo -n "Start dig: "; date; while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; dig $DOMAIN +short; done < subdomains.txt; echo -n "End: "; date; | tee resolved_domains_2_ips.txt;
 
 ## SUMMARY
 echo "SUMMARY of external_aid.sh results" >> $SUMMARY
@@ -40,19 +40,19 @@ echo -n "* Subdomains enumerated: " >> $SUMMARY; grep "" subdomains.txt -c >> $S
 ######## SUBDOMAIN VALIDATION
 echo -e "\n\n---- SUBDOMAIN VALIDATION ----"
 
-eyewitness -f subdomains.txt --timeout 15 --delay 10 --prepend-http --no-prompt -d eyewitness_result_subdomains;
+echo -n "Start eyewitness for subdomains: "; date; eyewitness -f subdomains.txt --timeout 15 --delay 10 --prepend-http --no-prompt -d eyewitness_result_subdomains; echo -n "End: "; date; | tee eyewitness_result.txt
 
-while read -r DOMAIN; do echo "SUBDOMAIN: $DOMAIN"; curl --silent --head --location --insecure --verbose --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0" "$DOMAIN" 2>&1; done < subdomains.txt | tee curl_result_subdomains.txt;
+echo -n "Start curl for subdomains: "; date; while read -r DOMAIN; do echo "SUBDOMAIN: $DOMAIN"; curl --silent --head --location --insecure --verbose --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0" "$DOMAIN" 2>&1; done < subdomains.txt; echo -n "End: "; date; | tee curl_result_subdomains.txt;
 
 cat curl_result_subdomains.txt | grep -ivE "office365" | grep -iE "OPENED" | awk -F\  '{print $NF}' | sort | uniq > final_urls.txt;
 
-while read -r DOMAIN; do dnsrecon -d $DOMAIN; echo ""; done < scope_domains.txt | tee dnsrecon_result.txt;
+echo -n "Start dnsrecon: "; date; while read -r DOMAIN; do dnsrecon -d $DOMAIN; echo ""; done < scope_domains.txt; echo -n "End: "; date; | tee dnsrecon_result.txt;
 
-while read -r DOMAIN; do echo "\n\n-- Domain:\n$DOMAIN"; NS=$(dig +short ns "$DOMAIN" | head --lines=1); echo "-- Name servers:\n$NS"; echo "-- Zone transfer test result:"; dig axfr "$DOMAIN" @"$NS"; done < scope_domains.txt | tee zone_transfer_result.txt
+echo -n "Start zone transfer check: "; date; while read -r DOMAIN; do echo "\n\n-- Domain:\n$DOMAIN"; NS=$(dig +short ns "$DOMAIN" | head --lines=1); echo "-- Name servers:\n$NS"; echo "-- Zone transfer test result:"; dig axfr "$DOMAIN" @"$NS"; done < scope_domains.txt; echo -n "End: "; date; | tee zone_transfer_result.txt
 
-while read -r DOMAIN; do echo -e "\n\n\nTesting domain $DOMAIN for zone walking"; NS=$(dig +short ns "$DOMAIN" | head --lines=1); echo -e "\n\t* Name servers:\n$NS"; echo -e "\n\t* INVALID subdomain result:"; dig "rsmtest.$DOMAIN" +dnssec @"$NS" | grep -E "NSEC"; echo "\n\t* VALID subdomain result:"; dig "www.$DOMAIN" +dnssec @"$NS" | grep -E "RRSIG"; done < scope_domains.txt | tee zone_walking_result.txt
+echo -n "Start zone walking check: "; date; while read -r DOMAIN; do echo -e "\n\n\nTesting domain $DOMAIN for zone walking"; NS=$(dig +short ns "$DOMAIN" | head --lines=1); echo -e "\n\t* Name servers:\n$NS"; echo -e "\n\t* INVALID subdomain result:"; dig "rsmtest.$DOMAIN" +dnssec @"$NS" | grep -E "NSEC"; echo "\n\t* VALID subdomain result:"; dig "www.$DOMAIN" +dnssec @"$NS" | grep -E "RRSIG"; done < scope_domains.txt; echo -n "End: "; date; | tee zone_walking_result.txt
 
-subjack -w scope_domains.txt -c ~/Tools/subjack/fingerprints.json -v | tee subjack_result.txt
+echo -n "Start subjacking: "; date; subjack -w scope_domains.txt -c ~/Tools/subjack/fingerprints.json -v; echo -n "End: "; date; | tee subjack_result.txt
 
 ## SUMMARY
 echo -e "\n\nSubdomain validation" >> $SUMMARY
@@ -105,9 +105,9 @@ echo -e "\n\n---- WEB CHECKS ----";
 
 cat have_active_http* > have_web_ports_open.txt;
 
-eyewitness -f have_web_ports_open.txt --timeout 15 --delay 10 --prepend-http --no-prompt -d eyewitness_result_hosts;
+echo -n "Start eyewitness for hosts: "; date; eyewitness -f have_web_ports_open.txt --timeout 15 --delay 10 --prepend-http --no-prompt -d eyewitness_result_hosts; echo -n "End: "; date; | tee eyewitness_result_hosts.txt
 
-while read -r HOST; do echo "HOST: $HOST"; curl --silent --head --location --insecure --verbose --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0" "$HOST" 2>&1; done < have_web_ports_open.txt | tee curl_result_hosts.txt;
+echo -n "Start curl for hosts: "; date; while read -r HOST; do echo "HOST: $HOST"; curl --silent --head --location --insecure --verbose --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0" "$HOST" 2>&1; done < have_web_ports_open.txt; echo -n "End: "; date; | tee curl_result_hosts.txt;
 
 ## SUMMARY
 
@@ -124,9 +124,9 @@ echo -e "\n\n---- HEADERS AND SSL CHECKS ----";
 
 cat have_web_ports_open.txt final_urls.txt > have_web.txt;
 
-while read -r HOST; do sslscan --disable-ssl-check $HOST; done < have_web.txt | tee sslscan_result.txt;
+echo -n "Start sslscan: "; date; while read -r HOST; do sslscan --disable-ssl-check $HOST; done < have_web.txt; echo -n "End: "; date; | tee sslscan_result.txt;
 
-FILE="shcheck_result.txt"; while read -r URL; do echo "URL: $URL"; shcheck "$URL"; done < have_web.txt | tee shcheck_result.txt;
+FILE="shcheck_result.txt"; echo -n "Start shcheck: "; date; while read -r URL; do echo "URL: $URL"; shcheck "$URL"; done < have_web.txt; echo -n "End: "; date; | tee shcheck_result.txt;
 
 ## SUMMARY
 echo -e "\n\nSSL/TLS checks" >> $SUMMARY;
@@ -142,21 +142,21 @@ echo -n "* Instances of DES/3DES: " $SUMMARY; cat sslscan_result* | grep -ivE "S
 ######## WORDPRESS CHECKS
 echo -e "\n\n---- WORDPRESS CHECKS";
 # /wp-json/
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/"; done < scope_domains.txt | tee curl_result_wp-json.txt;
+echo -n "Start curl for wp-json: "; date; while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/"; done < scope_domains.txt; echo -n "End: "; date; | tee curl_result_wp-json.txt;
 
 # /wp-cron.php
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-cron.php"; done < scope_domains.txt | tee curl_result_wp-cron.txt;
+echo -n "Start curl for wp-cron: "; date; while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-cron.php"; done < scope_domains.txt; echo -n "End: "; date; | tee curl_result_wp-cron.txt;
 
 # /xmlrpc.php
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/xmlrpc.php"; done < scope_domains.txt | tee curl_result_xmlrpc.txt;
+echo -n "Start curl for xmlrpc: "; date; while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/xmlrpc.php"; done < scope_domains.txt; echo -n "End: "; date; | tee curl_result_xmlrpc.txt;
 
 # /wp-admin/install.php?step=1
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-admin/install.php?step=1"; done < scope_domains.txt | tee curl_result_install.txt;
+echo -n "Start curl for install.php: "; date; while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-admin/install.php?step=1"; done < scope_domains.txt; echo -n "End: "; date; | tee curl_result_install.txt;
 
 # /user
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp/api/v2/users/"; done < scope_domains.txt | tee curl_result_users1.txt;
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/wp/v2/users/"; done < scope_domains.txt | tee curl_result_users2.txt;
-while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/author-sitemap.xml"; done < scope_domains.txt | tee curl_result_users3.txt;
+echo -n "Start wp/api/v2/users: "; date; while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp/api/v2/users/"; done < scope_domains.txt; echo -n "End: "; date; | tee curl_result_users1.txt;
+echo -n "Start wp-json/wp/v2/users: "; date; while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/wp-json/wp/v2/users/"; done < scope_domains.txt; echo -n "End: "; date; | tee curl_result_users2.txt;
+echo -n "Start author-sitemap.xml: "; date; while read -r DOMAIN; do echo "DOMAIN: $DOMAIN"; curl -sILk "https://$DOMAIN/author-sitemap.xml"; done < scope_domains.txt; echo -n "End: "; date; | tee curl_result_users3.txt;
 
 ## SUMMARY
 echo -e "\nWordPress checks" >> $SUMMARY;
